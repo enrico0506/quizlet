@@ -29,17 +29,28 @@
   </header>
 
   <main class="container" id="main">
+    <section class="banner hidden" id="resumeBanner" role="region" aria-label="Quiz fortsetzen">
+      <div class="banner-body">
+        <strong id="resumeTitle">Fortsetzen?</strong>
+        <span class="muted" id="resumeText">—</span>
+      </div>
+      <div class="banner-actions">
+        <button class="btn primary small" id="resumeContinueBtn" type="button">Fortsetzen</button>
+        <button class="btn small" id="resumeDiscardBtn" type="button">Verwerfen</button>
+      </div>
+    </section>
+
     <section class="card" id="importCard">
       <h2>1) Import</h2>
 
       <div class="grid">
         <div>
           <label class="label" for="csvFile">CSV-Datei</label>
-          <label class="dropzone" id="dropzone" for="csvFile">
+          <button class="dropzone" id="dropzone" type="button" aria-label="CSV-Datei auswählen oder hierher ziehen">
             <span class="dropzone-title">Datei auswählen oder hierher ziehen</span>
             <span class="dropzone-meta muted" id="fileName">Keine Datei ausgewählt</span>
-          </label>
-          <input id="csvFile" class="visually-hidden" type="file" accept=".csv,text/csv" />
+          </button>
+          <input id="csvFile" class="visually-hidden" type="file" accept=".csv,text/csv" tabindex="-1" />
           <p class="help">Unterstützt ; , oder Tab als Trennzeichen (wird automatisch erkannt).</p>
 
           <div class="row">
@@ -67,11 +78,28 @@
             <option value="">(erst CSV importieren)</option>
           </select>
 
+          <label class="label" for="searchInput">Suche (Fragen & Antworten)</label>
+          <input id="searchInput" type="search" placeholder="z.B. Ethik, Algorithmus, …" disabled />
+          <div class="row">
+            <span class="muted" id="filterCount">0 Fragen</span>
+            <button class="btn small" id="clearSearchBtn" type="button" disabled>Suche löschen</button>
+          </div>
+          <p class="help error hidden" id="filterError" role="status" aria-live="polite"></p>
+
           <div class="row">
             <label class="checkbox"><input type="checkbox" id="shuffleQuestions" /> Fragen mischen</label>
             <label class="checkbox"><input type="checkbox" id="shuffleAnswers" /> Antworten mischen</label>
             <label class="checkbox"><input type="checkbox" id="autoNext" /> Automatisch weiter</label>
           </div>
+
+          <div class="row">
+            <label class="label-inline" for="quizMode">Quiz‑Modus</label>
+            <select id="quizMode" class="select small">
+              <option value="practice">Üben (sofort Feedback)</option>
+              <option value="exam">Prüfung (Feedback am Ende)</option>
+            </select>
+          </div>
+          <p class="help">Im Prüfungsmodus kannst du Antworten ändern; Auswertung erst im Ergebnis.</p>
           <p class="help">Kürzel im Quiz: 1–4 / A–D wählen, Enter weiter, H Hinweis.</p>
         </div>
       </div>
@@ -110,7 +138,7 @@ Quiz 1;1;Was ist ...?;Aussage 1;Aussage 2;Aussage 3;;A;Denke an ...</pre>
             <strong id="timeText">0:00</strong>
           </div>
           <div class="score">
-            <span class="muted">Score</span>
+            <span class="muted" id="scoreLabel">Score</span>
             <strong id="scoreText">0 / 0</strong>
           </div>
         </div>
@@ -123,7 +151,10 @@ Quiz 1;1;Was ist ...?;Aussage 1;Aussage 2;Aussage 3;;A;Denke an ...</pre>
       <article class="question">
         <div class="question-head">
           <span class="pill" id="qCounter">Frage 1</span>
-          <button class="btn small" id="hintBtn" type="button" disabled aria-expanded="false" aria-controls="hintText">Hinweis</button>
+          <div class="question-actions">
+            <button class="btn small" id="flagBtn" type="button" aria-pressed="false">Markieren</button>
+            <button class="btn small" id="hintBtn" type="button" disabled aria-expanded="false" aria-controls="hintText">Hinweis</button>
+          </div>
         </div>
 
         <h3 id="questionText" class="question-text">—</h3>
@@ -153,8 +184,13 @@ Quiz 1;1;Was ist ...?;Aussage 1;Aussage 2;Aussage 3;;A;Denke an ...</pre>
       </div>
 
       <details class="details" open>
-        <summary>Review (falsche Antworten)</summary>
+        <summary id="reviewSummary">Review</summary>
         <div class="details-body" id="reviewList"></div>
+      </details>
+
+      <details class="details">
+        <summary>Markierte Fragen</summary>
+        <div class="details-body" id="flaggedList"></div>
       </details>
     </section>
   </main>
