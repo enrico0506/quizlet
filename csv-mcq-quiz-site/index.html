@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Importiere eine CSV mit Multiple-Choice Fragen und spiele das Quiz lokal im Browser." />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#0b0d10" />
+  <title>CSV Multiple-Choice Quiz</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Zum Inhalt springen</a>
+  <header class="app-header">
+    <div class="container header-row">
+      <div class="header-title">
+        <h1>CSV Multiple‑Choice Quiz</h1>
+        <p class="muted">Importiere eine CSV mit Fragen (Multiple Choice) und spiele das Quiz im Browser.</p>
+      </div>
+      <div class="header-actions">
+        <label class="label-inline" for="themeSelect">Design</label>
+        <select id="themeSelect" class="select small" aria-label="Design auswählen">
+          <option value="system">System</option>
+          <option value="dark">Dunkel</option>
+          <option value="light">Hell</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" id="main">
+    <section class="card" id="importCard">
+      <h2>1) Import</h2>
+
+      <div class="grid">
+        <div>
+          <label class="label" for="csvFile">CSV-Datei</label>
+          <label class="dropzone" id="dropzone" for="csvFile">
+            <span class="dropzone-title">Datei auswählen oder hierher ziehen</span>
+            <span class="dropzone-meta muted" id="fileName">Keine Datei ausgewählt</span>
+          </label>
+          <input id="csvFile" class="visually-hidden" type="file" accept=".csv,text/csv" />
+          <p class="help">Unterstützt ; , oder Tab als Trennzeichen (wird automatisch erkannt).</p>
+
+          <div class="row">
+            <button id="demoBtn" class="btn small" type="button">Demo laden</button>
+            <a class="btn small" href="technologie_ethik_mcq_1-50.csv" download>Beispiel‑CSV</a>
+          </div>
+
+          <details class="details">
+            <summary>Oder CSV‑Text einfügen</summary>
+            <div class="details-body">
+              <label class="label" for="csvText">CSV‑Text</label>
+              <textarea id="csvText" rows="7" placeholder="Header + Zeilen …"></textarea>
+              <div class="row row-actions">
+                <button id="importTextBtn" class="btn primary" type="button">Aus Text importieren</button>
+                <button id="clearTextBtn" class="btn" type="button">Text löschen</button>
+              </div>
+              <p class="help">Praktisch, wenn der Browser lokale Dateien blockiert.</p>
+            </div>
+          </details>
+        </div>
+
+        <div>
+          <label class="label" for="quizSelect">Quiz-Set</label>
+          <select id="quizSelect" disabled>
+            <option value="">(erst CSV importieren)</option>
+          </select>
+
+          <div class="row">
+            <label class="checkbox"><input type="checkbox" id="shuffleQuestions" /> Fragen mischen</label>
+            <label class="checkbox"><input type="checkbox" id="shuffleAnswers" /> Antworten mischen</label>
+            <label class="checkbox"><input type="checkbox" id="autoNext" /> Automatisch weiter</label>
+          </div>
+          <p class="help">Kürzel im Quiz: 1–4 / A–D wählen, Enter weiter, H Hinweis.</p>
+        </div>
+      </div>
+
+      <div class="row row-actions">
+        <button id="startBtn" class="btn primary" type="button" disabled>Quiz starten</button>
+        <button id="resetBtn" class="btn" type="button" disabled>Zurücksetzen</button>
+      </div>
+
+      <div id="importStatus" class="status" role="status" aria-live="polite"></div>
+
+      <details class="details">
+        <summary>CSV-Format (minimal / kompatibel)</summary>
+        <div class="details-body">
+          <p class="muted">
+            Mindestspalten (empfohlen):
+            <code>question</code>, <code>choice_A</code>, <code>choice_B</code>, optional <code>choice_C</code>, <code>choice_D</code>,
+            sowie <code>correct_letter</code> (A-D) oder <code>correct_index</code> (0-basiert).
+            Optional: <code>hint</code>, <code>quiz</code>.
+          </p>
+          <pre class="code-block">quiz;question_no;question;choice_A;choice_B;choice_C;choice_D;correct_letter;hint
+Quiz 1;1;Was ist ...?;Aussage 1;Aussage 2;Aussage 3;;A;Denke an ...</pre>
+        </div>
+      </details>
+    </section>
+
+    <section class="card hidden" id="quizCard" aria-live="polite">
+      <div class="quiz-top">
+        <div>
+          <h2 id="quizTitle">Quiz</h2>
+          <p class="muted" id="quizMeta">0 Fragen</p>
+        </div>
+        <div class="scorebox">
+          <div class="score">
+            <span class="muted">Zeit</span>
+            <strong id="timeText">0:00</strong>
+          </div>
+          <div class="score">
+            <span class="muted">Score</span>
+            <strong id="scoreText">0 / 0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress" role="progressbar" aria-label="Fortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-bar" id="progressBar" style="width:0%"></div>
+      </div>
+
+      <article class="question">
+        <div class="question-head">
+          <span class="pill" id="qCounter">Frage 1</span>
+          <button class="btn small" id="hintBtn" type="button" disabled aria-expanded="false" aria-controls="hintText">Hinweis</button>
+        </div>
+
+        <h3 id="questionText" class="question-text">—</h3>
+        <p class="hint hidden" id="hintText"></p>
+
+        <div class="choices" id="choices" role="list"></div>
+
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+
+        <div class="row row-actions">
+          <button class="btn" id="prevBtn" type="button" disabled>Zurück</button>
+          <button class="btn primary" id="nextBtn" type="button" disabled>Weiter</button>
+          <button class="btn danger" id="finishBtn" type="button">Beenden</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="card hidden" id="resultCard">
+      <h2>Ergebnis</h2>
+      <p class="muted" id="resultSummary">—</p>
+
+      <div class="row row-actions">
+        <button class="btn primary" id="restartBtn" type="button">Nochmal spielen</button>
+        <button class="btn" id="backToImportBtn" type="button">Neue CSV / anderes Set</button>
+        <button class="btn small" id="copyResultBtn" type="button">Ergebnis kopieren</button>
+        <button class="btn small" id="exportWrongBtn" type="button">Falsche exportieren</button>
+      </div>
+
+      <details class="details" open>
+        <summary>Review (falsche Antworten)</summary>
+        <div class="details-body" id="reviewList"></div>
+      </details>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <div class="container muted">Lokal im Browser. Keine Daten werden hochgeladen.</div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
